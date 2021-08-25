@@ -1,2 +1,6 @@
-# haskell-love-2021
-Strict Haskell presentation at haskell.love 2021
+---
+title: Strict Haskell
+author: Thomas Tuegel
+...
+
+# Strict and Lazy Evaluation

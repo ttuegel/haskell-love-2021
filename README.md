@@ -164,6 +164,31 @@ Remember, `newtype` constructors are not real constructors!
 
 ## Strict fields
 
+Besides binding patterns strictly, we can make constructor fields strict with `!`.
+This is not an extension, but part of the Haskell 2010 Language Report:
+
+``` {.haskell .section-01}
+data S a = S !a
+```
+
+``` {.haskell .ignore}
+case S (inside (16 * 16)) of
+    S _ -> ()
+
+case T (inside (16 * 16)) of
+    T _ -> ()
+```
+
+Unlike `BangPatterns`, this is not equivalent to `seq`.
+In particular, there is no way to lazily bind a strict field, except binding the entire constructor with an irrefutable pattern:
+
+``` {.haskell .ignore}
+case S (inside (16 * 16)) of
+    ~(S _) -> ()
+```
+
+Strict fields are widely used and very useful, but we should take care because they come with limitations.
+
 ## `StrictData`
 
 ## `Strict`

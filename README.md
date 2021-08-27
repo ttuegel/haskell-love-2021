@@ -18,6 +18,8 @@ We can use `trace` or `undefined` to explore how this happens.
 ``` {.haskell .section-01}
 data T a = T a
 
+newtype N a = N a
+
 lazy :: T Integer
 lazy = trace "outside" (A (trace "inside" (16 * 16)))
 ```
@@ -70,10 +72,14 @@ We can evaluate any expression by pattern matching, if the constructors of its t
 
 If a term is evaluated to its outermost constructor or lambda, we say it is in _weak head normal form_.
 
+Note: `newtype` constructors are _not_ real constructors!
+
 These terms are in weak head normal form:
 
 ``` {.haskell .ignore}
 T (16 * 16)
+
+N 16
 
 \x -> x + 1  -- Lambdas are values too!
 
@@ -83,6 +89,8 @@ T (16 * 16)
 These terms are not:
 
 ``` {.haskell .ignore}
+N (4 * 4)
+
 if (8 * 8) == 64 then A 1 else A 0
 
 (\x -> x + 1) . (\x -> 3 * x)
@@ -119,6 +127,40 @@ T _
 ```
 
 ## `BangPatterns`
+
+`BangPatterns` is a language extension to control strictness on a pattern-by-pattern basis. We can use `!` before any pattern and it will be evaluated to weak head normal form before matching:
+
+``` {.haskell .ignore}
+case lazy of
+    T !x -> const () x
+```
+
+We can use `!` anywhere in the pattern, but it may have no added effect:
+
+``` {.haskell .ignore}
+case lazy of
+    !(T x) -> const () x  -- legal, but not very useful
+```
+
+This is equivalent to using `seq`:
+
+``` {.haskell .ignore}
+case lazy of
+    T x -> seq x (const () x)
+```
+
+In practice, `BangPatterns` sees more use than `seq` itself.
+
+## `newtype` and `BangPatterns`
+
+`seq` and `!` may have unexpected consequences with `newtype`s:
+
+``` {.haskell .ignore}
+case N (trace "inside" 16 :: Integer) of
+    !(N x) -> const () x
+```
+
+Remember, `newtype` constructors are not real constructors!
 
 ## Strict fields
 

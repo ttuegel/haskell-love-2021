@@ -213,6 +213,8 @@ Strict fields are widely used and very useful, but we should take care because t
 
 # Applications and caveats
 
+## Switching to Strict
+
 ## Lazy calling convention
 
 ## Substitution

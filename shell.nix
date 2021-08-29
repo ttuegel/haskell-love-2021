@@ -7,7 +7,7 @@ let sources = import ./nix/sources.nix; in
 let
   inherit (pkgs) lib haskell haskellPackages;
   overridePlan = original: replace: drv:
-    drv.overrideScope (self: super: { "$original" = self."$replace"; });
+    drv.overrideScope (self: super: { "${original}" = self."${replace}"; });
   patat =
     lib.foldr
       (f: x: f x)
@@ -16,8 +16,11 @@ let
         (overridePlan "optparse-applicative" "optparse-applicative_0_15_1_0")
         haskell.lib.doJailbreak
       ];
+  ghc = haskellPackages.ghcWithPackages (hspkgs: with hspkgs; [
+    random
+  ]);
 in
 
 pkgs.mkShell {
-  buildInputs = with pkgs; [ patat ];
+  buildInputs = with pkgs; [ ghc patat haskellPackages.markdown-unlit ];
 }

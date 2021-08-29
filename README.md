@@ -5,6 +5,15 @@ author: Thomas Tuegel
 
 # Strict Haskell
 
+## Goals
+
+The goals of this talk are:
+
+- to _educate_ about the tools available for controlling evaluation and measuring performance
+- to _report_ my own experience managing performance of a large Haskell application
+- to _convince_ that writing a strict dialect of Haskell is a reasonable choice
+  for anyone with a performance-sensitive Haskell application.
+
 # Evaluation
 
 ## Pattern matching

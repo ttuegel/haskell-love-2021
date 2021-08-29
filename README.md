@@ -27,15 +27,18 @@ We can use `trace` or `undefined` to explore how this happens.
 ``` {.haskell .lazy}
 import Debug.Trace (trace)
 
-outside, inside, rhs, irrelevant :: a -> a
+outside, inside, rhs, irrelevant, body :: a -> a
 outside = trace "outside"
 inside = trace "inside"
 rhs = trace "rhs"
 irrelevant = trace "irrelevant"
+body = trace "body"
 
 data T = T Integer
+  deriving Show
 
 newtype N = N Integer
+  deriving Show
 ```
 
 ``` {.haskell .lazy}
@@ -189,6 +192,27 @@ example_GtKP =
 
 `BangPatterns` tends to be used more in practice than `seq` itself.
 
+## `BangPatterns` in `let` and `where`
+
+The order of evaluation in `let` and `where` blocks is subtle.
+
+Top-level strict bindings are evaluated before the body of the block:
+
+``` {.haskell .lazy}
+example_ptVB =
+    let !x = outside 1
+    in body (T x)
+```
+
+Nested strict bindings are evaluated when a variable bound in the same pattern
+is demanded:
+
+``` {.haskell .lazy}
+example_MESN =
+    let (x, !y) = (1, inside 2)
+    in body (T x, T y)
+```
+
 ## `newtype` and `BangPatterns`
 
 `seq` and `!` may have unexpected consequences with `newtype`s:
@@ -209,6 +233,7 @@ This is not an extension, but part of the Haskell 2010 Language Report:
 
 ``` {.haskell .lazy}
 data S = S !Integer
+  deriving Show
 ```
 
 ``` {.haskell .lazy}
@@ -230,9 +255,19 @@ example_emjP =
         ~(S _) -> ()
 ```
 
-Strict fields are popular and widely used, but we should be aware of this restriction.
-
 ## `StrictData`
+
+The `StrictData` extension makes all constructor fields strict by default,
+as if they were prefixed with `!`.
+
+To make a field lazy, prefix its type with `~`:
+
+``` {.haskell .ignore}
+data T' = T ~Integer
+```
+
+`StrictData` is a popular extension that is often regarded as at least harmless,
+but we should remain aware of the consequences of making fields strict!
 
 ## `Strict`
 

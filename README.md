@@ -69,6 +69,12 @@ nothing more and nothing less.
 An _irrefutable pattern_ defers evaluation until the bound variables are demanded:
 
 ``` {.haskell .lazy}
+-- refutable
+example_zePe =
+    case outside (T (inside (1 + 1))) of
+        T a -> rhs (a + 1)
+
+-- irrefutable
 example_xCHk =
     case outside (T (inside (1 + 1))) of
         ~(T a) -> rhs (a + 1)
@@ -84,8 +90,8 @@ example_GuXI =
 
 ## Sharing
 
-A named expression will be evaluated at most once, that is:
-the result of evaluating an expression is _shared_.
+A named expression will be evaluated at most once, that is: the result of
+evaluating an expression is _shared_.
 
 ``` {.haskell .lazy}
 shared :: T
@@ -103,9 +109,11 @@ example_QTdb =
 
 ## Weak head normal form
 
-We can evaluate any expression by pattern matching, if the constructors of its type are in scope.
+We can evaluate any expression by pattern matching, if the constructors of its
+type are in scope.
 
-If a term is evaluated to its outermost constructor or lambda, we say it is in _weak head normal form_.
+If a term is evaluated to its outermost constructor or lambda, we say it is in
+_weak head normal form_.
 
 Note: `newtype` constructors are _not_ real constructors!
 
@@ -135,7 +143,8 @@ if (8 * 8) == 64 then A 1 else A 0
 
 ## `seq`
 
-The compiler gives us a magic tool to evaluate expressions to weak head normal form even if we don't know the type's constructors!
+The compiler gives us a magic tool to evaluate expressions to weak head normal
+form even if we don't know the type's constructors!
 
 ``` {.haskell .lazy}
 strictly :: T
@@ -148,11 +157,13 @@ example_Xplw =
         T _ -> ()
 ```
 
-`irrelevant` is evaluated because we have to pass through `seq` to get to the outermost constructor.
+`irrelevant` is evaluated because we have to pass through `seq` to get to the
+outermost constructor.
 
 ## `BangPatterns`
 
-`BangPatterns` is a language extension to control strictness on a pattern-by-pattern basis. We can use `!` before any pattern and it will be evaluated to weak head normal form before matching:
+With the `BangPatterns` extension enabled, use `!` before any pattern to
+evaluate it to weak head normal form before matching:
 
 ``` {.haskell .lazy}
 example_upsS =
@@ -176,7 +187,7 @@ example_GtKP =
         T x -> seq x (const () x)
 ```
 
-In practice, `BangPatterns` sees more use than `seq` itself.
+`BangPatterns` tends to be used more in practice than `seq` itself.
 
 ## `newtype` and `BangPatterns`
 
@@ -210,8 +221,8 @@ example_UlWi =
         T _ -> ()
 ```
 
-Unlike `BangPatterns`, this is not equivalent to `seq`.
-In particular, there is no way to lazily bind a strict field, except binding the entire constructor with an irrefutable pattern:
+There is no way to lazily bind a strict field, except to bind the entire
+constructor with an irrefutable pattern:
 
 ``` {.haskell .lazy}
 example_emjP =
@@ -219,7 +230,7 @@ example_emjP =
         ~(S _) -> ()
 ```
 
-Strict fields are widely used and very useful, but we should take care because they come with limitations.
+Strict fields are popular and widely used, but we should be aware of this restriction.
 
 ## `StrictData`
 

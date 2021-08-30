@@ -258,7 +258,15 @@ example_emjP =
 ## `StrictData`
 
 The `StrictData` extension makes all constructor fields strict by default,
-as if they were prefixed with `!`.
+for data types defined in a module where it is enabled, as if they were prefixed with `!`.
+
+``` {.haskell .ignore}
+-- These are the same, with StrictData enabled.
+
+data S = S !Integer
+
+data S' = S' Integer
+```
 
 To make a field lazy, prefix its type with `~`:
 

@@ -279,6 +279,54 @@ but we should remain aware of the consequences of making fields strict!
 
 ## `Strict`
 
+The `Strict` extension makes pattern bindings strict by default, and also enables `StrictData`.
+
+`Strict` applies a `!`-pattern at the top level of patterns:
+
+``` {.haskell .ignore}
+-- function definitions
+f !x = _
+
+-- lambdas
+\ !x -> _
+
+-- case expressions
+case y of
+    !x -> _
+
+-- let and where bindings
+let !x = y
+in _
+
+-- do notation
+do
+    !x <- y
+    _
+
+-- list comprehensions
+[ _ | !y <- x ]
+```
+
+## `Strict`
+
+`Strict` does _not_ apply `!` to nested patterns:
+
+``` {.haskell .ignore}
+case t of
+    !(x, y) -> _  -- ! at top level, but not on x and y
+```
+
+or at the top-level of a module:
+
+``` {.haskell .ignore}
+module M where
+
+-- No !-pattern at all
+(x, y) = _
+```
+
+All the usual caveats about `BangPatterns` and `StrictData` apply.
+
 # Debugging
 
 ## Thunks and space leaks

@@ -22,5 +22,7 @@ let
 in
 
 pkgs.mkShell {
-  buildInputs = with pkgs; [ ghc patat haskellPackages.markdown-unlit ];
+  buildInputs = with pkgs; with haskellPackages; [
+    ghc patat hp2pretty markdown-unlit
+  ];
 }

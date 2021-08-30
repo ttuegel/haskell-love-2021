@@ -331,6 +331,19 @@ All the usual caveats about `BangPatterns` and `StrictData` apply.
 
 ## Thunks and space leaks
 
+A _thunk_ is what we call (the runtime representation of) an expression that is
+not in weak head normal form.
+
+As we have seen, constructors may be lazy, so that expressions in weak head normal form
+may contain thunks themselves.
+
+<!-- It's thunks all the way down. -->
+
+Thunks can be a problem if the thunk uses more space than the value it represents.
+For example, consider the thunk `1 + 1` to the value `2`.
+
+<!-- Every non-trivial Haskell program leaks thunks. -->
+
 ## Heap profiling
 
 ## Interpreting heap profiles
@@ -360,3 +373,5 @@ All the usual caveats about `BangPatterns` and `StrictData` apply.
 ## Lifted types and bottoms on the heap
 
 ## Unlifted types
+
+## Testing and undefined

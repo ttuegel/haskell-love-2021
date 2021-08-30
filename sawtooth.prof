@@ -1,0 +1,27 @@
+	Mon Aug 30 17:12 2021 Time and Allocation Profiling Report  (Final)
+
+	   sawtooth +RTS -p -h -i0.01 -RTS
+
+	total time  =        0.94 secs   (939 ticks @ 1000 us, 1 processor)
+	total alloc = 696,070,456 bytes  (excludes profiling overheads)
+
+COST CENTRE MODULE    SRC                         %time %alloc
+
+loop        Main      sawtooth.hs:(15,1)-(23,22)   95.8   95.4
+loop.\      Main      sawtooth.hs:21:30-34          4.2    4.6
+
+
+                                                                                 individual      inherited
+COST CENTRE  MODULE                SRC                        no.     entries  %time %alloc   %time %alloc
+
+MAIN         MAIN                  <built-in>                 118           0    0.0    0.0   100.0  100.0
+ CAF         Main                  <entire-module>            235           0    0.0    0.0     0.0    0.0
+  main       Main                  sawtooth.hs:(10,1)-(12,12) 236           1    0.0    0.0     0.0    0.0
+ CAF         GHC.Conc.Signal       <entire-module>            229           0    0.0    0.0     0.0    0.0
+ CAF         GHC.IO.Encoding       <entire-module>            220           0    0.0    0.0     0.0    0.0
+ CAF         GHC.IO.Encoding.Iconv <entire-module>            218           0    0.0    0.0     0.0    0.0
+ CAF         GHC.IO.Handle.FD      <entire-module>            210           0    0.0    0.0     0.0    0.0
+ CAF         GHC.IO.Handle.Text    <entire-module>            149           0    0.0    0.0     0.0    0.0
+ main        Main                  sawtooth.hs:(10,1)-(12,12) 237           0    0.0    0.0   100.0  100.0
+  loop       Main                  sawtooth.hs:(15,1)-(23,22) 238     1000002   95.8   95.4   100.0  100.0
+   loop.\    Main                  sawtooth.hs:21:30-34       239     1000000    4.2    4.6     4.2    4.6

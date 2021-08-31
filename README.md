@@ -346,9 +346,44 @@ For example, consider the thunk `1 + 1` to the value `2`.
 
 ## Heap profiling
 
+Here is a simple program that leaks space in a loop:
+
+``` {.haskell .sawtooth}
+{-# LANGUAGE NumericUnderscores #-}
+
+module Main (main) where
+
+import Control.Concurrent (threadDelay)
+import Control.Monad (when)
+import Data.IORef
+
+main :: IO ()
+main = do
+    r <- newIORef 0
+    loop r 0
+
+loop :: IORef Integer -> Int -> IO ()
+loop r n
+    | n > 1_000_000 = pure ()
+    | otherwise = do
+        when (n `mod` 100_000 == 0) $ do
+            x <- readIORef r
+            print x  -- serialization barrier
+        modifyIORef r (\x -> x + 1)
+        threadDelay 100  -- delay to make heap graph more readable
+        loop r (n + 1)
+```
+
 ## Interpreting heap profiles
 
 ## Limitations of heap profiling
+
+- Heap profiling is a _sampled_ profiling mode. Any features smaller than the
+  sampling interval (default: 0.1 seconds) cannot reliably be detected.
+
+<!-- We can increase the sampling frequency, but gathering more data means there is more data we need to sift through. We don't have a way to increase the frequency selectively. -->
+
+<!-- Do you work on a web app backend? Is your request-response cycle faster than 200 ms? By Nyquist-Shannon theorem, you can't reliably detect a thunk leak with the default settings. -->
 
 ## Cost centre profiling
 

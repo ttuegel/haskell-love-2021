@@ -12,3 +12,9 @@ small: README.lhs
 
 small.prof: small
 	./$< +RTS -p
+
+clean:
+	rm -f small*
+	rm -f sawtooth*
+	rm -f *.o *.hi *.hp *.dump-simpl
+.PHONY: clean

@@ -1,5 +1,5 @@
 sawtooth: README.lhs
-	ghc $< -pgmL markdown-unlit -optL haskell+sawtooth -o sawtooth -rtsopts -prof -fprof-auto
+	ghc $< -pgmL markdown-unlit -optL haskell+sawtooth -o $@ -rtsopts -prof -fprof-auto
 
 sawtooth.hp: sawtooth
 	./$< +RTS -p -h -i0.01

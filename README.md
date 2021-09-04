@@ -362,6 +362,9 @@ main = do
     r <- newIORef 0
     loop r 0
 
+increment :: IORef Integer -> IO ()
+increment r = modifyIORef r (\x -> x + 1)
+
 loop :: IORef Integer -> Int -> IO ()
 loop r n
     | n > 1_000_000 = pure ()
@@ -369,7 +372,7 @@ loop r n
         when (n `mod` 100_000 == 0) $ do
             x <- readIORef r
             print x  -- serialization barrier
-        modifyIORef r (\x -> x + 1)
+        increment r
         threadDelay 100  -- delay to make heap graph more readable
         loop r (n + 1)
 ```
@@ -381,13 +384,13 @@ loop r n
 - Heap profiling is a _sampled_ profiling mode. Any features smaller than the
   sampling interval (default: 0.1 seconds) cannot reliably be detected.
 
-<!-- We can increase the sampling frequency, but gathering more data means there is more data we need to sift through. We don't have a way to increase the frequency selectively. -->
+<!-- We can increase the sampling frequency, but gathering more data is slower to run and more difficult to analyze. We don't have a way to increase the frequency selectively. -->
 
-<!-- Do you work on a web app backend? Is your request-response cycle faster than 200 ms? By Nyquist-Shannon theorem, you can't reliably detect a thunk leak with the default settings. -->
+<!-- Do you work on a web app backend? Is your request-response cycle faster than 200 ms? By Nyquist-Shannon theorem, you can't reliably detect a thunk leak with the default settings. You can increase the frequency, but it has a cost. -->
 
-## Cost centre profiling
+- Heap profiling loses context.
 
-## Interpreting cost centre profiles
+<!-- We cannot directly identify the root cause of allocation from the heap profile because only the top of the cost centre stack is shown. -->
 
 ## Limitations of cost centre profiling
 

@@ -1,27 +1,29 @@
-	Tue Aug 31 10:09 2021 Time and Allocation Profiling Report  (Final)
+	Fri Sep  3 21:06 2021 Time and Allocation Profiling Report  (Final)
 
 	   sawtooth +RTS -p -h -i0.01 -RTS
 
-	total time  =        1.39 secs   (1392 ticks @ 1000 us, 1 processor)
+	total time  =        1.13 secs   (1127 ticks @ 1000 us, 1 processor)
 	total alloc = 696,070,456 bytes  (excludes profiling overheads)
 
 COST CENTRE MODULE    SRC                          %time %alloc
 
-loop        Main      README.lhs:(366,1)-(374,22)   96.9   95.4
-loop.\      Main      README.lhs:372:30-34           3.1    4.6
+loop        Main      README.lhs:(369,1)-(377,22)   89.2   82.8
+increment   Main      README.lhs:366:1-41            6.7   12.6
+increment.\ Main      README.lhs:366:36-40           4.1    4.6
 
 
-                                                                                  individual      inherited
-COST CENTRE  MODULE                SRC                         no.     entries  %time %alloc   %time %alloc
+                                                                                     individual      inherited
+COST CENTRE     MODULE                SRC                         no.     entries  %time %alloc   %time %alloc
 
-MAIN         MAIN                  <built-in>                  118           0    0.0    0.0   100.0  100.0
- CAF         Main                  <entire-module>             235           0    0.0    0.0     0.0    0.0
-  main       Main                  README.lhs:(361,1)-(363,12) 236           1    0.0    0.0     0.0    0.0
- CAF         GHC.Conc.Signal       <entire-module>             229           0    0.0    0.0     0.0    0.0
- CAF         GHC.IO.Encoding       <entire-module>             220           0    0.0    0.0     0.0    0.0
- CAF         GHC.IO.Encoding.Iconv <entire-module>             218           0    0.0    0.0     0.0    0.0
- CAF         GHC.IO.Handle.FD      <entire-module>             210           0    0.0    0.0     0.0    0.0
- CAF         GHC.IO.Handle.Text    <entire-module>             149           0    0.0    0.0     0.0    0.0
- main        Main                  README.lhs:(361,1)-(363,12) 237           0    0.0    0.0   100.0  100.0
-  loop       Main                  README.lhs:(366,1)-(374,22) 238     1000002   96.9   95.4   100.0  100.0
-   loop.\    Main                  README.lhs:372:30-34        239     1000000    3.1    4.6     3.1    4.6
+MAIN            MAIN                  <built-in>                  118           0    0.0    0.0   100.0  100.0
+ CAF            Main                  <entire-module>             235           0    0.0    0.0     0.0    0.0
+  main          Main                  README.lhs:(361,1)-(363,12) 236           1    0.0    0.0     0.0    0.0
+ CAF            GHC.Conc.Signal       <entire-module>             229           0    0.0    0.0     0.0    0.0
+ CAF            GHC.IO.Encoding       <entire-module>             220           0    0.0    0.0     0.0    0.0
+ CAF            GHC.IO.Encoding.Iconv <entire-module>             218           0    0.0    0.0     0.0    0.0
+ CAF            GHC.IO.Handle.FD      <entire-module>             210           0    0.0    0.0     0.0    0.0
+ CAF            GHC.IO.Handle.Text    <entire-module>             149           0    0.0    0.0     0.0    0.0
+ main           Main                  README.lhs:(361,1)-(363,12) 237           0    0.0    0.0   100.0  100.0
+  loop          Main                  README.lhs:(369,1)-(377,22) 238     1000002   89.2   82.8   100.0  100.0
+   increment    Main                  README.lhs:366:1-41         239     1000001    6.7   12.6    10.8   17.2
+    increment.\ Main                  README.lhs:366:36-40        240     1000000    4.1    4.6     4.1    4.6

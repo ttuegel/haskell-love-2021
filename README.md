@@ -439,6 +439,27 @@ main = do
     print r
 ```
 
+## Cost centre profiling - Laziness
+
+```
+                                                           individual      inherited
+COST CENTRE  SRC                         no.     entries  %time %alloc   %time %alloc
+
+MAIN         <built-in>                  121           0    0.0    1.3     0.0  100.0
+ CAF         <entire-module>             241           0    0.0    0.1     0.0    1.0
+  main       README.lhs:(437,1)-(439,11) 242           1    0.0    0.2     0.0    0.9
+   double    README.lhs:429:1-16         246           1    0.0    0.0     0.0    0.0
+   small     README.lhs:(432,1)-(434,26) 244           1    0.0    0.7     0.0    0.7
+    square   README.lhs:426:1-16         248           1    0.0    0.0     0.0    0.0
+```
+
+<!-- I omitted the MODULE column to save space. -->
+
+- Where is `double` evaluated?
+- Where is `square` evaluated?
+
+We can answer these questions, but not by using the cost centre profile.
+
 ## Limitations of cost centre profiling
 
 ## How `Strict` helps

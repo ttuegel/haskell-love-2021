@@ -459,10 +459,44 @@ MAIN         <built-in>                  121           0    0.0    1.3     0.0  
 - Where is `square` evaluated?
 
 We can answer these questions, but not by using the cost centre profile.
+The heirarchy in the profile is independent of the actual evaluation order.
 
-## Limitations of cost centre profiling
+## Interpreting cost centre profiles - Recursion
+
+GHC User's Guide, Section 8.1: (Emphasis mine.)
+
+> What about recursive functions, and mutually recursive groups of functions?
+> Where are the costs attributed? Well, although GHC does keep information about
+> which groups of functions called each other recursively, this information
+> isn’t displayed in the basic time and allocation profile, instead the
+> call-graph is flattened into a tree as follows: _a call to a function that
+> occurs elsewhere on the current stack does not push another entry on the
+> stack, instead the costs for this call are aggregated into the caller_.
+
+The cost centre profile will appear to mis-attribute costs in the case of
+recursive functions. Of course, the costs aren't _really_ mis-attributed; it's
+just not possible to distinguish the call sites.
+
+<!-- This isn't directly related to Strict and profiling with laziness, it's just something everybody should know. -->
 
 ## How `Strict` helps
+
+1. `Strict` tends to turn thunk (space) leaks into wasted time.
+
+    `default = lazy      =>          delay evaluation    =>   leak space`
+
+    `default = strict    =>    unnecessary evaluation    =>   waste time`
+
+    `Strict` nudges in the direction of easier debugging.
+
+    <!-- This is not a cure-all! Strict will not make your program faster. We are literally trading one type of problem for another. -->
+
+2. `Strict` tends to make the evaluation order match the cost centre heirarchy.
+
+    It's easier to debug programs that waste time when the evaluation order
+    and the cost centre profile match.
+
+    <!-- What about intentional laziness? With Strict, it's easier to spot intentional laziness in the code. -->
 
 # Applications and caveats
 

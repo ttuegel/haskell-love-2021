@@ -392,6 +392,53 @@ loop r n
 
 <!-- We cannot directly identify the root cause of allocation from the heap profile because only the top of the cost centre stack is shown. -->
 
+## Cost centre profiling - Laziness
+
+GHC User's Guide, Section 8.1.2: (Emphasis mine.)
+
+> While running a program with profiling turned on, GHC maintains a cost-centre
+> stack behind the scenes, and attributes any costs (memory allocation and time)
+> to whatever the current cost-centre stack is at the time the cost is incurred.
+
+> The mechanism is simple: whenever the program evaluates an expression with an
+> SCC annotation, `{-# SCC c -#} E`, the cost centre `c` is pushed on the current
+> stack, and the entry count for this stack is incremented by one. The stack
+> also sometimes has to be saved and restored; in particular when the program
+> creates a thunk (a lazy suspension), the current cost-centre stack is stored
+> in the thunk, and restored when the thunk is evaluated. In this way, the
+> cost-centre stack is _independent of the actual evaluation order_ used by GHC at
+> runtime.
+
+The cost center profile cannot show where a thunk is forced because the
+cost centre stack is independent of the evaluation order.
+
+## Cost centre profiling - Laziness
+
+``` {.haskell .small}
+module Main (main) where
+
+import Control.Monad (unless)
+
+data Lazy = Lazy Integer
+    deriving (Show)
+
+square :: Integer -> Integer
+square x = x * x
+
+double :: Integer -> Integer
+double x = x + x
+
+small :: Integer -> IO Lazy
+small x = do
+    unless (x > 2) $ putStrLn "x is small"
+    pure $ Lazy (square x)
+
+main :: IO ()
+main = do
+    r <- small (double 2)
+    print r
+```
+
 ## Limitations of cost centre profiling
 
 ## How `Strict` helps

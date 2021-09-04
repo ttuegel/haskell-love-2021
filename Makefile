@@ -6,3 +6,9 @@ sawtooth.hp: sawtooth
 
 sawtooth.svg: sawtooth.hp
 	hp2pretty $<
+
+small: README.lhs
+	ghc $< -pgmL markdown-unlit -optL haskell+small -o $@ -rtsopts -prof -fprof-auto
+
+small.prof: small
+	./$< +RTS -p

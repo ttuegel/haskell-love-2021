@@ -7,6 +7,9 @@ sawtooth.hp: sawtooth
 sawtooth.svg: sawtooth.hp
 	hp2pretty $<
 
+sawtooth.png: sawtooth.svg
+	convert +antialias $< $@
+
 small: README.lhs
 	ghc $< -pgmL markdown-unlit -optL haskell+small -o $@ -rtsopts -prof -fprof-auto
 

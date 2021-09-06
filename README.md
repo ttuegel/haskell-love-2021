@@ -1,6 +1,9 @@
 ---
 title: Strict Haskell
 author: Thomas Tuegel
+patat:
+  images:
+    backend: kitty
 ...
 
 # Strict Haskell
@@ -362,6 +365,9 @@ main = do
     r <- newIORef 0
     loop r 0
 
+-- | What it seems to do: Increment the referenced Integer.
+-- | What it actually does: Replace the referenced thunk with a thunk that would
+-- | increment the integer that would be computed by the referenced thunk.
 increment :: IORef Integer -> IO ()
 increment r = modifyIORef r (\x -> x + 1)
 
@@ -379,10 +385,12 @@ loop r n
 
 ## Interpreting heap profiles
 
+![](sawtooth.png)
+
 ## Limitations of heap profiling
 
-- Heap profiling is a _sampled_ profiling mode. Any features smaller than the
-  sampling interval (default: 0.1 seconds) cannot reliably be detected.
+- Walking the heap is expensive, so the heap profiling sample interval is long
+  by default (0.1 seconds). Small features cannot be detected reliably.
 
 <!-- We can increase the sampling frequency, but gathering more data is slower to run and more difficult to analyze. We don't have a way to increase the frequency selectively. -->
 
@@ -391,6 +399,8 @@ loop r n
 - Heap profiling loses context.
 
 <!-- We cannot directly identify the root cause of allocation from the heap profile because only the top of the cost centre stack is shown. -->
+
+<!-- Heap spikes are often stripey. -->
 
 ## Cost centre profiling - Laziness
 
@@ -508,7 +518,7 @@ There are two ways that `Strict` helped us control performance:
 
     <!-- What about intentional laziness? With Strict, it's easier to spot intentional laziness in the code. -->
 
-# Applications and caveats
+# Why Strict? Why NOT Strict?
 
 ## Switching to Strict
 
@@ -538,8 +548,8 @@ There are two ways that `Strict` helped us control performance:
 
 ## Lazy calling convention
 
-Suppose we find a particular type really should be bound lazily, because it is
-expensive to compute and rarely used.
+Suppose we find a particular type should be bound lazily by default, because it
+is expensive to compute and rarely used.
 
 It's too easy to forget to bind with `~` everywhere.
 
@@ -654,7 +664,7 @@ In a few years, perhaps I can update this talk to say:
 
 -   Measure more.
 
-    Your Haskell program leaks memory in ways you probably aren't testing for.
+    Your Haskell program leaks memory in ways you aren't testing for.
 
 -   Use `Strict` to easily debug the problems you measure.
 

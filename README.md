@@ -557,7 +557,7 @@ A common complaint about `Strict` is that it breaks substitution:
 let x = f y in g x
 -- is only the same as this:
 g (f y)
--- if (f y) is defined (not _|_).
+-- if (f y) is defined (not _|_) or (g) is strict.
 ```
 
 In practice, this doesn't affect our ability to do equational reasoning

@@ -491,6 +491,7 @@ recursive functions. Of course, the costs aren't _really_ mis-attributed;
 it's just not possible to distinguish the call sites.
 
 <!-- This isn't directly related to Strict and profiling with laziness, it's just something everybody should know. -->
+
 # Why Strict? Why NOT Strict?
 
 ## How `Strict` helps
@@ -502,6 +503,8 @@ We made the switch to Strict Haskell. Within a week, we identified and
 fixed more performance bugs than we had in the preceeding months, and we
 finally felt confident that we had control of the substantial performance
 concerns.
+
+<!-- This is essentially my entire argument for `Strict`: it made my team happier and more productive. -->
 
 There are two ways that `Strict` helped us control performance:
 

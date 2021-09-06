@@ -646,6 +646,16 @@ In a few years, perhaps I can update this talk to say:
 > Use lifted data types when `_|_` has a reasonable interpretation in your
 > domain model. Use unlifted data types everywhere else.
 
-## Conclusions
+## Recommendations
 
--
+-   Measure performance.
+
+    Everyone says they don't care about performance, until it's _too slow_.
+
+-   Measure more.
+
+    Your Haskell program leaks memory in ways you probably aren't testing for.
+
+-   Use `Strict` to easily debug the problems you measure.
+
+<!-- I've equipped you to do the first two even if you aren't prepared to take the leap. -->

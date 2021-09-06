@@ -550,6 +550,30 @@ data Lazy a = Lazy ~a
 
 ## Substitution
 
+A common complaint about `Strict` is that it breaks substitution:
+
+``` {.haskell .ignore}
+-- With Strict, this:
+let x = f y in g x
+-- is only the same as this:
+g (f y)
+-- if (f y) is defined (not _|_).
+```
+
+In practice, this doesn't affect our ability to do equational reasoning
+because we were ignoring `_|_` anyway.
+
+>     "Fast and Loose Reasoning is Morally Correct" (doi:10.1.1.63.1337)
+>
+> Functional programmers often reason about programs as if they were written in
+> a total language, expecting the results to carry over to non-total (partial)
+> languages. We justify such reasoning. ... It is proved that if two closed
+> terms have the same semantics in the total language, then they have related
+> semantics in the partial language.
+
+If we cared about the correctness of our programs with undefined inputs, we
+would write tests for that.
+
 ## Deriving
 
 ## Avoiding surprises

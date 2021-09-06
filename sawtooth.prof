@@ -1,15 +1,15 @@
-	Mon Sep  6 14:41 2021 Time and Allocation Profiling Report  (Final)
+	Mon Sep  6 16:08 2021 Time and Allocation Profiling Report  (Final)
 
 	   sawtooth +RTS -p -h -i0.01 -RTS
 
-	total time  =        6.55 secs   (6552 ticks @ 1000 us, 1 processor)
-	total alloc = 696,070,456 bytes  (excludes profiling overheads)
+	total time  =        1.79 secs   (1793 ticks @ 1000 us, 1 processor)
+	total alloc = 632,070,744 bytes  (excludes profiling overheads)
 
 COST CENTRE MODULE    SRC                          %time %alloc
 
-loop        Main      README.lhs:(375,1)-(383,22)   91.5   82.8
-increment   Main      README.lhs:372:1-41            6.0   12.6
-increment.\ Main      README.lhs:372:36-40           2.5    4.6
+loop        Main      README.lhs:(376,1)-(383,22)   93.6   81.0
+increment   Main      README.lhs:373:1-41            4.7   13.9
+increment.\ Main      README.lhs:373:36-40           1.6    5.1
 
 
                                                                                      individual      inherited
@@ -17,13 +17,13 @@ COST CENTRE     MODULE                SRC                         no.     entrie
 
 MAIN            MAIN                  <built-in>                  118           0    0.0    0.0   100.0  100.0
  CAF            Main                  <entire-module>             235           0    0.0    0.0     0.0    0.0
-  main          Main                  README.lhs:(364,1)-(366,12) 236           1    0.0    0.0     0.0    0.0
+  main          Main                  README.lhs:(368,1)-(370,12) 236           1    0.0    0.0     0.0    0.0
  CAF            GHC.Conc.Signal       <entire-module>             229           0    0.0    0.0     0.0    0.0
  CAF            GHC.IO.Encoding       <entire-module>             220           0    0.0    0.0     0.0    0.0
  CAF            GHC.IO.Encoding.Iconv <entire-module>             218           0    0.0    0.0     0.0    0.0
  CAF            GHC.IO.Handle.FD      <entire-module>             210           0    0.0    0.0     0.0    0.0
  CAF            GHC.IO.Handle.Text    <entire-module>             149           0    0.0    0.0     0.0    0.0
- main           Main                  README.lhs:(364,1)-(366,12) 237           0    0.0    0.0   100.0  100.0
-  loop          Main                  README.lhs:(375,1)-(383,22) 238     1000002   91.5   82.8   100.0  100.0
-   increment    Main                  README.lhs:372:1-41         239     1000001    6.0   12.6     8.5   17.2
-    increment.\ Main                  README.lhs:372:36-40        240     1000000    2.5    4.6     2.5    4.6
+ main           Main                  README.lhs:(368,1)-(370,12) 237           0    0.0    0.0   100.0  100.0
+  loop          Main                  README.lhs:(376,1)-(383,22) 238     1000002   93.6   81.0   100.0  100.0
+   increment    Main                  README.lhs:373:1-41         239     1000001    4.7   13.9     6.4   19.0
+    increment.\ Main                  README.lhs:373:36-40        240     1000000    1.6    5.1     1.6    5.1

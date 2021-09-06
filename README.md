@@ -512,6 +512,27 @@ There are two ways that `Strict` helped us control performance:
 
 ## Switching to Strict
 
+1.  Collect end-to-end performance measurements.
+
+    This doesn't need to be complicated: the `time` command is good enough.
+
+    <!-- A problem looks like: a spike in time or space use. -->
+
+    You already have end-to-end benchmarks, right?
+
+    You at least have end-to-end _tests_, right?
+
+    Microbenchmarks are not very useful here because the types of performance
+    problems we are looking for arise out of complex interactions between
+    components.
+
+2.  Turn on the `Strict` extension in one module. Run the benchmarks. Repeat.
+
+    Problems are unfortunately still non-local.
+
+    This part is tedious in a large project...
+    Perhaps a reason to start with `Strict` in the first place!
+
 ## Lazy calling convention
 
 ## Substitution

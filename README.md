@@ -535,6 +535,19 @@ There are two ways that `Strict` helped us control performance:
 
 ## Lazy calling convention
 
+Suppose we find a particular type really should be bound lazily, because it is
+expensive to compute and rarely used.
+
+It's too easy to forget to bind with `~` everywhere.
+
+Introduce a lazy wrapper. The most general case:
+
+``` {.haskell .ignore}
+data Lazy a = Lazy ~a
+```
+
+<!-- We could, and often should, use a more specific wrapper. -->
+
 ## Substitution
 
 ## Deriving

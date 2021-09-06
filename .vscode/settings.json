@@ -1,3 +1,8 @@
 {
-    "nixEnvSelector.nixFile": "${workspaceRoot}/shell.nix"
+    "nixEnvSelector.nixFile": "${workspaceRoot}/shell.nix",
+    "editor.wordWrapColumn": 74,
+    "editor.rulers": [
+        74
+    ],
+    "rewrap.wrappingColumn": 74
 }

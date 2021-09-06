@@ -10,12 +10,12 @@ patat:
 
 ## Goals
 
-The goals of this talk are:
+You will learn:
 
-- to _educate_ about the tools available for controlling evaluation and measuring performance
-- to _report_ my own experience managing performance of a large Haskell application
-- to _convince_ that writing a strict dialect of Haskell is a reasonable choice
-  for anyone with a performance-sensitive Haskell application.
+- How evaluation works
+- How to control evaluation
+- How to measure performance
+- Why you should and should not use Strict Haskell
 
 # Evaluation
 
@@ -26,6 +26,8 @@ Evaluation is driven by pattern matching.
 We can use `trace` or `undefined` to explore how this happens.
 
 <!-- If you liked Minesweeper, you'll love debugging with `undefined`! -->
+
+<!-- `trace` is polymorphic, so it doesn't matter so much where you put the parentheses, but it will affect when it fires. -->
 
 ``` {.haskell .lazy}
 import Debug.Trace (trace)
@@ -50,29 +52,29 @@ example_HVgx =
         T _ -> ()
 ```
 
-Note: `trace` is polymorphic, so it doesn't care so much where you put the parentheses.
-That can affect when it fires, though!
-
 ## Pattern matching
 
-For each pattern, the expression is evaluated until it can be matched or refuted:
+For each pattern, the expression is evaluated until it can be matched or
+refuted:
 
 ``` {.haskell .lazy}
 example_MGPj =
     case outside (T (inside (1 + 1))) of
-        T 3 -> () -- Forces the argument of T, even though it doesn't match.
+        T 3 -> () -- Forces 'inside', even though it doesn't match.
         T _ -> ()
 ```
 
-The first pattern forces the complete evaluation even though it does not match:
-we have to evaluate the argument of `T` to decide if the pattern matches.
+The first pattern forces the complete evaluation even though it does not
+match: we have to evaluate the argument of `T` to decide if the pattern
+matches.
 
-There is no magic! The runtime system evaluates terms as needed to match patterns,
-nothing more and nothing less.
+There is no magic! The runtime system evaluates terms as needed to match
+patterns, nothing more and nothing less.
 
 ## Irrefutable patterns
 
-An _irrefutable pattern_ defers evaluation until the bound variables are demanded:
+An _irrefutable pattern_ defers evaluation until the bound variables are
+demanded:
 
 ``` {.haskell .lazy}
 -- refutable
@@ -86,8 +88,7 @@ example_xCHk =
         ~(T a) -> rhs (a + 1)
 ```
 
-As the name implies, however, an irrefutable pattern always matches, so we must
-take care with sum types:
+Irrefutable patterns always match. Take care with sum types!
 
 ``` {.haskell .lazy}
 example_GuXI =
@@ -97,8 +98,8 @@ example_GuXI =
 
 ## Sharing
 
-A named expression will be evaluated at most once, that is: the result of
-evaluating an expression is _shared_.
+An expression will be evaluated at most once. The result of evaluating an
+expression is _shared_.
 
 ``` {.haskell .lazy}
 shared :: T
@@ -116,13 +117,8 @@ example_QTdb =
 
 ## Weak head normal form
 
-We can evaluate any expression by pattern matching, if the constructors of its
-type are in scope.
-
-If a term is evaluated to its outermost constructor or lambda, we say it is in
-_weak head normal form_.
-
-Note: `newtype` constructors are _not_ real constructors!
+A term is in _weak head normal form_ if it is evaluated to its outermost
+constructor or lambda.
 
 These terms are in weak head normal form:
 
@@ -139,7 +135,7 @@ N 16
 These terms are not:
 
 ``` {.haskell .ignore}
-N (4 * 4)
+N (4 * 4)  -- 'newtype' constructors are not real constructors!
 
 if (8 * 8) == 64 then A 1 else A 0
 
@@ -150,8 +146,12 @@ if (8 * 8) == 64 then A 1 else A 0
 
 ## `seq`
 
-The compiler gives us a magic tool to evaluate expressions to weak head normal
-form even if we don't know the type's constructors!
+If we know the constructors, we can evaluate any expression by pattern
+matching. What if the constructors are not in scope, or the type is not
+known?
+
+The compiler gives us a magic tool to evaluate expressions to weak head
+normal form even if we don't know the type's constructors!
 
 ``` {.haskell .lazy}
 strictly :: T
@@ -164,8 +164,8 @@ example_Xplw =
         T _ -> ()
 ```
 
-`irrelevant` is evaluated because we have to pass through `seq` to get to the
-outermost constructor.
+`irrelevant` is evaluated because we have to pass through `seq` to get to
+the outermost constructor.
 
 ## `BangPatterns`
 
@@ -208,8 +208,8 @@ example_ptVB =
     in body (T x)
 ```
 
-Nested strict bindings are evaluated when a variable bound in the same pattern
-is demanded:
+Nested strict bindings are evaluated when a variable bound in the same
+pattern is demanded:
 
 ``` {.haskell .lazy}
 example_MESN =
@@ -232,8 +232,9 @@ Remember, `newtype` constructors are not real constructors! Evaluating a
 
 ## Strict fields
 
-Besides binding patterns strictly, we can make constructor fields strict with `!`.
-This is not an extension, but part of the Haskell 2010 Language Report:
+Besides binding patterns strictly, we can make constructor fields strict
+with `!`. This is not an extension, but part of the Haskell 2010 Language
+Report:
 
 ``` {.haskell .lazy}
 data S = S !Integer
@@ -262,7 +263,8 @@ example_emjP =
 ## `StrictData`
 
 The `StrictData` extension makes all constructor fields strict by default,
-for data types defined in a module where it is enabled, as if they were prefixed with `!`.
+for data types defined in a module where it is enabled, as if they were
+prefixed with `!`.
 
 ``` {.haskell .ignore}
 -- These are the same, with StrictData enabled.
@@ -278,12 +280,14 @@ To make a field lazy, prefix its type with `~`:
 data T' = T ~Integer
 ```
 
-`StrictData` is a popular extension that is often regarded as at least harmless,
-but we should remain aware of the consequences of making fields strict!
+`StrictData` is a popular extension that is often regarded as at least
+harmless, but we should remain aware of the consequences of making fields
+strict!
 
 ## `Strict`
 
-The `Strict` extension makes pattern bindings strict by default, and also enables `StrictData`.
+The `Strict` extension makes pattern bindings strict by default, and also
+enables `StrictData`.
 
 `Strict` applies a `!`-pattern at the top level of patterns:
 
@@ -331,26 +335,24 @@ module M where
 
 All the usual caveats about `BangPatterns` and `StrictData` apply.
 
-# Debugging
+# Performance
 
 ## Thunks and space leaks
 
-A _thunk_ is what we call (the runtime representation of) an expression that is
-not in weak head normal form.
+A _thunk_ is what we call (the runtime representation of) an expression
+that is not in weak head normal form.
 
-As we have seen, constructors may be lazy, so that expressions in weak head normal form
-may contain thunks themselves.
+As we have seen, constructors may be lazy, so that expressions in weak
+head normal form may contain thunks themselves.
 
 <!-- It's thunks all the way down. -->
 
-Thunks can be a problem if the thunk uses more space than the value it represents.
-For example, consider the thunk `1 + 1` to the value `2`.
+Thunks can be a problem if the thunk uses more space than the value it
+represents. For example, consider the thunk `1 + 1` to the value `2`.
 
 <!-- Every non-trivial Haskell program leaks thunks. -->
 
 ## Heap profiling
-
-Here is a simple program that leaks space in a loop:
 
 ``` {.haskell .sawtooth}
 {-# LANGUAGE NumericUnderscores #-}
@@ -366,9 +368,6 @@ main = do
     r <- newIORef 0
     loop r 0
 
--- | What it seems to do: Increment the referenced Integer.
--- | What it actually does: Replace the referenced thunk with a thunk that would
--- | increment the integer that would be computed by the referenced thunk.
 increment :: IORef Integer -> IO ()
 increment r = modifyIORef r (\x -> x + 1)
 
@@ -376,9 +375,8 @@ loop :: IORef Integer -> Int -> IO ()
 loop r n
     | n > 1_000_000 = pure ()
     | otherwise = do
-        when (n `mod` 100_000 == 0) $ do
-            x <- readIORef r
-            print x  -- serialization barrier
+        when (n `mod` 100_000 == 0)
+            (readIORef r >>= print)  -- serialization barrier
         increment r
         threadDelay 100  -- delay to make heap graph more readable
         loop r (n + 1)
@@ -390,8 +388,9 @@ loop r n
 
 ## Limitations of heap profiling
 
-- Walking the heap is expensive, so the heap profiling sample interval is long
-  by default (0.1 seconds). Small features cannot be detected reliably.
+- Walking the heap is expensive, so the heap profiling sample interval is
+  long by default (0.1 seconds). Short-lived leaks cannot be detected
+  reliably.
 
 <!-- We can increase the sampling frequency, but gathering more data is slower to run and more difficult to analyze. We don't have a way to increase the frequency selectively. -->
 
@@ -407,18 +406,19 @@ loop r n
 
 GHC User's Guide, Section 8.1.2: (Emphasis mine.)
 
-> While running a program with profiling turned on, GHC maintains a cost-centre
-> stack behind the scenes, and attributes any costs (memory allocation and time)
-> to whatever the current cost-centre stack is at the time the cost is incurred.
+> While running a program with profiling turned on, GHC maintains a
+> cost-centre stack behind the scenes, and attributes any costs (memory
+> allocation and time) to whatever the current cost-centre stack is at the
+> time the cost is incurred.
 
-> The mechanism is simple: whenever the program evaluates an expression with an
-> SCC annotation, `{-# SCC c -#} E`, the cost centre `c` is pushed on the current
-> stack, and the entry count for this stack is incremented by one. The stack
-> also sometimes has to be saved and restored; in particular when the program
-> creates a thunk (a lazy suspension), the current cost-centre stack is stored
-> in the thunk, and restored when the thunk is evaluated. In this way, the
-> cost-centre stack is _independent of the actual evaluation order_ used by GHC at
-> runtime.
+> The mechanism is simple: whenever the program evaluates an expression
+> with an SCC annotation, `{-# SCC c -#} E`, the cost centre `c` is pushed
+> on the current stack, and the entry count for this stack is incremented
+> by one. The stack also sometimes has to be saved and restored; in
+> particular when the program creates a thunk (a lazy suspension), the
+> current cost-centre stack is stored in the thunk, and restored when the
+> thunk is evaluated. In this way, the cost-centre stack is _independent
+> of the actual evaluation order_ used by GHC at runtime.
 
 The cost center profile cannot show where a thunk is forced because the
 cost centre stack is independent of the evaluation order.
@@ -453,80 +453,84 @@ main = do
 ## Cost centre profiling - Laziness
 
 ```
-                                                           individual      inherited
-COST CENTRE  SRC                         no.     entries  %time %alloc   %time %alloc
+                    individual      inherited
+COST CENTRE       %time %alloc   %time %alloc
 
-MAIN         <built-in>                  121           0    0.0    1.3     0.0  100.0
- CAF         <entire-module>             241           0    0.0    0.1     0.0    1.0
-  main       README.lhs:(437,1)-(439,11) 242           1    0.0    0.2     0.0    0.9
-   double    README.lhs:429:1-16         246           1    0.0    0.0     0.0    0.0
-   small     README.lhs:(432,1)-(434,26) 244           1    0.0    0.7     0.0    0.7
-    square   README.lhs:426:1-16         248           1    0.0    0.0     0.0    0.0
+MAIN                0.0    1.3     0.0  100.0
+ CAF                0.0    0.1     0.0    1.0
+  main              0.0    0.2     0.0    0.9
+   double           0.0    0.0     0.0    0.0
+   small            0.0    0.7     0.0    0.7
+    square          0.0    0.0     0.0    0.0
 ```
 
-<!-- I omitted the MODULE column to save space. -->
+<!-- I omitted some columns to save space. -->
 
 - Where is `double` evaluated?
 - Where is `square` evaluated?
 
 We can answer these questions, but not by using the cost centre profile.
-The heirarchy in the profile is independent of the actual evaluation order.
+The heirarchy in the profile is independent of the actual evaluation
+order.
 
 ## Interpreting cost centre profiles - Recursion
 
 GHC User's Guide, Section 8.1: (Emphasis mine.)
 
-> What about recursive functions, and mutually recursive groups of functions?
-> Where are the costs attributed? Well, although GHC does keep information about
-> which groups of functions called each other recursively, this information
-> isn’t displayed in the basic time and allocation profile, instead the
-> call-graph is flattened into a tree as follows: _a call to a function that
-> occurs elsewhere on the current stack does not push another entry on the
-> stack, instead the costs for this call are aggregated into the caller_.
+> What about recursive functions, and mutually recursive groups of
+> functions? Where are the costs attributed? Well, although GHC does keep
+> information about which groups of functions called each other
+> recursively, this information isn’t displayed in the basic time and
+> allocation profile, instead the call-graph is flattened into a tree as
+> follows: _a call to a function that occurs elsewhere on the current
+> stack does not push another entry on the stack, instead the costs for
+> this call are aggregated into the caller_.
 
 The cost centre profile will appear to mis-attribute costs in the case of
-recursive functions. Of course, the costs aren't _really_ mis-attributed; it's
-just not possible to distinguish the call sites.
+recursive functions. Of course, the costs aren't _really_ mis-attributed;
+it's just not possible to distinguish the call sites.
 
 <!-- This isn't directly related to Strict and profiling with laziness, it's just something everybody should know. -->
+# Why Strict? Why NOT Strict?
 
 ## How `Strict` helps
 
-We struggled for months debugging space leaks in a 120+ kLoC Haskell application,
-and even then felt that we had only scratched the surface.
+We struggled for months debugging space leaks in a 120+ kLoC Haskell
+application, and even then felt that we had only scratched the surface.
 
-We made the switch to Strict Haskell. Within a week, we identified and fixed
-more performance bugs than we had in the preceeding months, and we finally felt
-confident that we had control of the substantial performance concerns.
+We made the switch to Strict Haskell. Within a week, we identified and
+fixed more performance bugs than we had in the preceeding months, and we
+finally felt confident that we had control of the substantial performance
+concerns.
 
 There are two ways that `Strict` helped us control performance:
 
 1. `Strict` tends to turn thunk (space) leaks into wasted time.
 
-    `default = lazy      =>          delay evaluation    =>   leak space`
+    ```
+    default = lazy      =>          delay evaluation    =>   leak space
 
-    `default = strict    =>    unnecessary evaluation    =>   waste time`
+    default = strict    =>    unnecessary evaluation    =>   waste time
+    ```
 
-    Debugging programs that _waste time_ is easier than debugging programs that
-    _leak space_.
+    Debugging programs that _waste time_ is easier than debugging programs
+    that _leak space_.
 
     <!-- This is not a cure-all! Strict will not make your program faster. We are trading one type of problem for another. -->
 
-2. `Strict` tends to make the evaluation order match the cost centre heirarchy.
+2. `Strict` tends to make the evaluation order match the cost centre profile.
 
-    Debugging programs that _waste time_ is easier when the evaluation order
-    matches the cost centre profile.
+    Debugging programs that _waste time_ is easier when the evaluation
+    order matches the cost centre profile.
 
     <!-- What about intentional laziness? With Strict, it's easier to spot intentional laziness in the code. -->
-
-# Why Strict? Why NOT Strict?
 
 ## Switching to Strict
 
 1.  Collect end-to-end performance measurements.
 
-    This doesn't need to be complicated: the `time` command is good enough to
-    identify a problem exists.
+    This doesn't need to be complicated: the `time` command is good enough
+    to identify a problem exists.
 
     <!-- A problem looks like: a spike in time or space use. -->
 
@@ -534,11 +538,10 @@ There are two ways that `Strict` helped us control performance:
 
     You at least have end-to-end _tests_, right?
 
-    Microbenchmarks are not very useful here because the types of performance
-    problems we are looking for arise out of complex interactions between
-    components.
+    Problems arise from complex interactions between components.
+    Microbenchmarks are not very useful.
 
-2.  Turn on the `Strict` extension in one module. Run the benchmarks. Repeat.
+2.  Turn on `Strict` in one module. Run the benchmarks. Repeat.
 
     Problems are unfortunately still non-local.
 
@@ -549,10 +552,10 @@ There are two ways that `Strict` helped us control performance:
 
 ## Lazy calling convention
 
-Suppose we find a particular type should be bound lazily by default, because it
-is expensive to compute and rarely used.
+We find a type that is expensive to compute, but rarely used. We decide it
+should be bound lazily by default.
 
-It's too easy to forget to bind with `~` everywhere.
+It's too easy to forget to bind with `~` everywhere. What do we do?
 
 Introduce a lazy wrapper. The most general case:
 
@@ -564,7 +567,7 @@ data Lazy a = Lazy ~a
 
 ## Deriving
 
-`DeriveFunctor` behaves badly in conjunction with `Strict` and `StrictData`.
+`DeriveFunctor` behaves badly in with `Strict`.
 
 <!-- Actually, it behaves badly any time strict fields are involved. -->
 
@@ -590,10 +593,9 @@ newtype Id1 a = Id1 a
 
 Workarounds:
 
-1.  Ignore it. Could be an unpleasant surprise for developers in an open-source library.
-
-2.  Use `NoStrict` in the module where `Functor` is derived and mark fields lazy.
-
+1.  Ignore it. Could be an unpleasant surprise for developers in an
+    open-source library.
+2.  Use `NoStrict` in the module where `Functor` is derived. Mark fields lazy.
 3.  Avoid `DeriveFunctor`.
 
 ## Reasoning about substitution
@@ -613,32 +615,25 @@ because we were ignoring `_|_` anyway.
 
 Workarounds:
 
-1.  Ignore the problem.
-
-    In practice, we mostly ignore `_|_` when we reason about pure code, which is
-    already subtly incorrect.
-
-    <!-- This is only a problem if we take a very naive view of substitution. -->
-
+1.  Ignore the problem. Already we mostly ignore `_|_` when we reason
+    about pure code.
 2.  Use lazy patterns when binding partial values.
 
 ## Why don't we care about `_|_`?
 
-Ignoring `_|_` makes our reasoning incorrect in ways we don't usually care about:
-
 >     "Fast and Loose Reasoning is Morally Correct" (doi:10.1.1.63.1337)
 >
-> Functional programmers often reason about programs as if they were written in
-> a total language, expecting the results to carry over to non-total (partial)
-> languages. We justify such reasoning. ... It is proved that if two closed
-> terms have the same semantics in the total language, then they have related
-> semantics in the partial language.
+> Functional programmers often reason about programs as if they were
+> written in a total language, expecting the results to carry over to
+> non-total (partial) languages. We justify such reasoning. ... It is
+> proved that if two closed terms have the same semantics in the total
+> language, then they have related semantics in the partial language.
 
-If we cared about the correctness of our programs with undefined inputs, we
-would write tests for that.
+If we cared about the correctness of our programs with undefined inputs,
+we would write tests for that.
 
-We don't care about `_|_` because it mostly doesn't have an interpretation in
-our domain model.
+We don't care about `_|_` because it mostly doesn't have an interpretation
+in our domain model.
 
 <!-- For example, bank account details, social media profile, etc. -->
 
@@ -650,7 +645,7 @@ as opposed to certain primitive types which are _unlifted_.
 Proposal to add user-defined _unlifted_ data types to GHC:
 https://gitlab.haskell.org/ghc/ghc/-/wikis/unlifted-data-types
 
-In a few years, perhaps I can update this talk to say:
+This talk in a few years, probably:
 
 <!-- When the feature stabilizes and base libraries support it... -->
 

@@ -533,6 +533,8 @@ There are two ways that `Strict` helped us control performance:
     This part is tedious in a large project...
     Perhaps a reason to start with `Strict` in the first place!
 
+3.  Finally, add `Strict` to `default-extensions`.
+
 ## Lazy calling convention
 
 Suppose we find a particular type really should be bound lazily, because it is
@@ -575,6 +577,43 @@ If we cared about the correctness of our programs with undefined inputs, we
 would write tests for that.
 
 ## Deriving
+
+`DeriveFunctor` behaves badly in conjunction with `Strict` and `StrictData`.
+It generates instances that don't satisfy composition law:
+
+``` {.haskell .ignore}
+fmap (f . g) == fmap f . fmap g
+```
+
+<!-- Actually, it behaves badly any time strict fields are involved. -->
+
+Example:
+
+``` {.haskell .functor}
+{-# LANGUAGE Strict #-}
+{-# LANGUAGE DeriveFunctor #-}
+
+module StrictDeriving where
+
+newtype Id1 a = Id1 a
+    deriving (Functor, Show)
+
+-- >>> fmap (const 2 . const undefined) (Id1 1)
+-- Id1 2
+
+-- >>> (fmap (const 2) . fmap (const undefined)) (Id1 1)
+-- undefined
+```
+
+Workarounds:
+
+1.  Ignore it.
+
+    Could be an unpleasant surprise for developers in an open-source library.
+
+2.  Use `NoStrict` in the module where `Functor` is derived and mark fields lazy.
+
+3.  Avoid `DeriveFunctor`.
 
 ## Avoiding surprises
 

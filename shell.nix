@@ -27,6 +27,6 @@ pkgs.mkShell {
       ghc patat hp2pretty markdown-unlit
     ])
     ++ (with pkgs; [
-      kitty
+      # kitty  # required, but must be installed system-wide for OpenGL
     ]);
 }

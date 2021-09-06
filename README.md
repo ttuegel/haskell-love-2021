@@ -550,40 +550,9 @@ data Lazy a = Lazy ~a
 
 <!-- We could, and often should, use a more specific wrapper. -->
 
-## Substitution
-
-A common complaint about `Strict` is that it breaks substitution:
-
-``` {.haskell .ignore}
--- With Strict, this:
-let x = f y in g x
--- is only the same as this:
-g (f y)
--- if (f y) is defined (not _|_) or (g) is strict.
-```
-
-In practice, this doesn't affect our ability to do equational reasoning
-because we were ignoring `_|_` anyway.
-
->     "Fast and Loose Reasoning is Morally Correct" (doi:10.1.1.63.1337)
->
-> Functional programmers often reason about programs as if they were written in
-> a total language, expecting the results to carry over to non-total (partial)
-> languages. We justify such reasoning. ... It is proved that if two closed
-> terms have the same semantics in the total language, then they have related
-> semantics in the partial language.
-
-If we cared about the correctness of our programs with undefined inputs, we
-would write tests for that.
-
 ## Deriving
 
 `DeriveFunctor` behaves badly in conjunction with `Strict` and `StrictData`.
-It generates instances that don't satisfy composition law:
-
-``` {.haskell .ignore}
-fmap (f . g) == fmap f . fmap g
-```
 
 <!-- Actually, it behaves badly any time strict fields are involved. -->
 
@@ -598,6 +567,8 @@ module StrictDeriving where
 newtype Id1 a = Id1 a
     deriving (Functor, Show)
 
+-- Composition law:
+
 -- >>> fmap (const 2 . const undefined) (Id1 1)
 -- Id1 2
 
@@ -607,18 +578,71 @@ newtype Id1 a = Id1 a
 
 Workarounds:
 
-1.  Ignore it.
-
-    Could be an unpleasant surprise for developers in an open-source library.
+1.  Ignore it. Could be an unpleasant surprise for developers in an open-source library.
 
 2.  Use `NoStrict` in the module where `Functor` is derived and mark fields lazy.
 
 3.  Avoid `DeriveFunctor`.
 
-## Avoiding surprises
+## Reasoning about substitution
 
-## Lifted types and bottoms on the heap
+A common complaint about `Strict` is that it breaks substitution:
+
+``` {.haskell .ignore}
+-- With Strict, this:
+let x = f y in g x
+-- is only the same as this:
+g (f y)
+-- if (f y) is defined (not _|_) or (g) is strict.
+```
+
+In practice, this doesn't affect our ability to do equational reasoning
+because we were ignoring `_|_` anyway.
+
+Workarounds:
+
+1.  Ignore the problem.
+
+    In practice, we mostly ignore `_|_` when we reason about pure code, which is
+    already subtly incorrect.
+
+    <!-- This is only a problem if we take a very naive view of substitution. -->
+
+2.  Use lazy patterns when binding partial values.
+
+## Why don't we care about `_|_`?
+
+Ignoring `_|_` makes our reasoning incorrect in ways we don't usually care about:
+
+>     "Fast and Loose Reasoning is Morally Correct" (doi:10.1.1.63.1337)
+>
+> Functional programmers often reason about programs as if they were written in
+> a total language, expecting the results to carry over to non-total (partial)
+> languages. We justify such reasoning. ... It is proved that if two closed
+> terms have the same semantics in the total language, then they have related
+> semantics in the partial language.
+
+If we cared about the correctness of our programs with undefined inputs, we
+would write tests for that.
+
+We don't care about `_|_` because it mostly doesn't have an interpretation in
+our domain model.
+
+<!-- For example, bank account details, social media profile, etc. -->
 
 ## Unlifted types
 
-## Testing and undefined
+Normal data types are _lifted_ meaning they contain `_|_`,
+as opposed to certain primitive types which are _unlifted_.
+
+Proposal to add user-defined _unlifted_ data types to GHC:
+https://gitlab.haskell.org/ghc/ghc/-/wikis/unlifted-data-types
+
+In a few years, perhaps I can update this talk to say:
+
+<!-- When the feature stabilizes and base libraries support it... -->
+
+> Use lifted data types when `_|_` has a reasonable interpretation in your
+> domain model. Use unlifted data types everywhere else.
+
+## Conclusions

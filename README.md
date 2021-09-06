@@ -514,7 +514,8 @@ There are two ways that `Strict` helped us control performance:
 
 1.  Collect end-to-end performance measurements.
 
-    This doesn't need to be complicated: the `time` command is good enough.
+    This doesn't need to be complicated: the `time` command is good enough to
+    identify a problem exists.
 
     <!-- A problem looks like: a spike in time or space use. -->
 
@@ -646,3 +647,5 @@ In a few years, perhaps I can update this talk to say:
 > domain model. Use unlifted data types everywhere else.
 
 ## Conclusions
+
+-

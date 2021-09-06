@@ -16,6 +16,10 @@ small: README.lhs
 small.prof: small
 	./$< +RTS -p
 
+ghci:
+	ghci -Wno-missing-signatures -XBangPatterns -pgmL markdown-unlit -optL haskell+lazy README.lhs
+.PHONY: ghci
+
 clean:
 	rm -f small*
 	rm -f sawtooth*

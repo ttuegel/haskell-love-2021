@@ -86,7 +86,8 @@ example_xCHk =
         ~(T a) -> rhs (a + 1)
 ```
 
-As the name implies, however, an irrefutable pattern always matches, so we must take care with sum types:
+As the name implies, however, an irrefutable pattern always matches, so we must
+take care with sum types:
 
 ``` {.haskell .lazy}
 example_GuXI =

@@ -481,20 +481,30 @@ just not possible to distinguish the call sites.
 
 ## How `Strict` helps
 
+We struggled for months debugging space leaks in a 120+ kLoC Haskell application,
+and even then felt that we had only scratched the surface.
+
+We made the switch to Strict Haskell. Within a week, we identified and fixed
+more performance bugs than we had in the preceeding months, and we finally felt
+confident that we had control of the substantial performance concerns.
+
+There are two ways that `Strict` helped us control performance:
+
 1. `Strict` tends to turn thunk (space) leaks into wasted time.
 
     `default = lazy      =>          delay evaluation    =>   leak space`
 
     `default = strict    =>    unnecessary evaluation    =>   waste time`
 
-    `Strict` nudges in the direction of easier debugging.
+    Debugging programs that _waste time_ is easier than debugging programs that
+    _leak space_.
 
-    <!-- This is not a cure-all! Strict will not make your program faster. We are literally trading one type of problem for another. -->
+    <!-- This is not a cure-all! Strict will not make your program faster. We are trading one type of problem for another. -->
 
 2. `Strict` tends to make the evaluation order match the cost centre heirarchy.
 
-    It's easier to debug programs that waste time when the evaluation order
-    and the cost centre profile match.
+    Debugging programs that _waste time_ is easier when the evaluation order
+    matches the cost centre profile.
 
     <!-- What about intentional laziness? With Strict, it's easier to spot intentional laziness in the code. -->
 

@@ -118,7 +118,7 @@ example_QTdb =
 ## Weak head normal form
 
 A term is in _weak head normal form_ if it is evaluated to its outermost
-constructor or lambda.
+constructor or lambda. Otherwise, we call it a _thunk_.
 
 These terms are in weak head normal form:
 
@@ -339,18 +339,102 @@ All the usual caveats about `BangPatterns` and `StrictData` apply.
 
 ## Thunks and space leaks
 
-A _thunk_ is what we call (the runtime representation of) an expression
-that is not in weak head normal form.
-
-As we have seen, constructors may be lazy, so that expressions in weak
-head normal form may contain thunks themselves.
-
-<!-- It's thunks all the way down. -->
-
 Thunks can be a problem if the thunk uses more space than the value it
-represents. For example, consider the thunk `1 + 1` to the value `2`.
+represents.
 
-<!-- Every non-trivial Haskell program leaks thunks. -->
+Every non-trivial Haskell program leaks thunks.
+
+## Cost centre profiling
+
+``` {.haskell .small}
+module Main (main) where
+
+import Control.Monad (unless)
+
+data Lazy = Lazy Integer
+    deriving (Show)
+
+square :: Integer -> Integer
+square x = x * x
+
+double :: Integer -> Integer
+double x = x + x
+
+small :: Integer -> IO Lazy
+small x = do
+    unless (x > 2) $ putStrLn "x is small"
+    pure $ Lazy (square x)
+
+main :: IO ()
+main = do
+    r <- small (double 2)
+    print r
+```
+
+## Cost centre profiling
+
+TODO: Build and run with cost centre profiling
+
+## Cost centre profiling - Laziness
+
+```
+                    individual      inherited
+COST CENTRE       %time %alloc   %time %alloc
+
+MAIN                0.0    1.3     0.0  100.0
+ CAF                0.0    0.1     0.0    1.0
+  main              0.0    0.2     0.0    0.9
+   double           0.0    0.0     0.0    0.0
+   small            0.0    0.7     0.0    0.7
+    square          0.0    0.0     0.0    0.0
+```
+
+<!-- I omitted some columns to save space. -->
+
+- Where is `double` evaluated?
+- Where is `square` evaluated?
+
+We can answer these questions, but not by using the cost centre profile.
+
+## Interpreting cost centre profiles - Laziness
+
+GHC User's Guide, Section 8.1.2: (Emphasis mine.)
+
+> While running a program with profiling turned on, GHC maintains a
+> cost-centre stack behind the scenes, and attributes any costs (memory
+> allocation and time) to whatever the current cost-centre stack is at the
+> time the cost is incurred.
+
+> The mechanism is simple: whenever the program evaluates an expression
+> with an SCC annotation, `{-# SCC c -#} E`, the cost centre `c` is pushed
+> on the current stack, and the entry count for this stack is incremented
+> by one. The stack also sometimes has to be saved and restored; in
+> particular when the program creates a thunk (a lazy suspension), the
+> current cost-centre stack is stored in the thunk, and restored when the
+> thunk is evaluated. In this way, the cost-centre stack is _independent
+> of the actual evaluation order_ used by GHC at runtime.
+
+The cost center profile cannot show where a thunk is forced because the
+cost centre stack is independent of the evaluation order.
+
+## Interpreting cost centre profiles - Recursion
+
+GHC User's Guide, Section 8.1: (Emphasis mine.)
+
+> What about recursive functions, and mutually recursive groups of
+> functions? Where are the costs attributed? Well, although GHC does keep
+> information about which groups of functions called each other
+> recursively, this information isn’t displayed in the basic time and
+> allocation profile, instead the call-graph is flattened into a tree as
+> follows: _a call to a function that occurs elsewhere on the current
+> stack does not push another entry on the stack, instead the costs for
+> this call are aggregated into the caller_.
+
+The cost centre profile will appear to mis-attribute costs in the case of
+recursive functions. Of course, the costs aren't _really_ mis-attributed;
+it's just not possible to distinguish the call sites.
+
+<!-- This isn't directly related to Strict and profiling with laziness, it's just something everybody should know. -->
 
 ## Heap profiling
 
@@ -382,6 +466,10 @@ loop r n
         loop r (n + 1)
 ```
 
+## Heap profiling
+
+TODO: Build and run with heap profiling
+
 ## Interpreting heap profiles
 
 ![](sawtooth.png)
@@ -401,96 +489,6 @@ loop r n
 <!-- We cannot directly identify the root cause of allocation from the heap profile because only the top of the cost centre stack is shown. -->
 
 <!-- Heap spikes are often stripey. -->
-
-## Cost centre profiling - Laziness
-
-GHC User's Guide, Section 8.1.2: (Emphasis mine.)
-
-> While running a program with profiling turned on, GHC maintains a
-> cost-centre stack behind the scenes, and attributes any costs (memory
-> allocation and time) to whatever the current cost-centre stack is at the
-> time the cost is incurred.
-
-> The mechanism is simple: whenever the program evaluates an expression
-> with an SCC annotation, `{-# SCC c -#} E`, the cost centre `c` is pushed
-> on the current stack, and the entry count for this stack is incremented
-> by one. The stack also sometimes has to be saved and restored; in
-> particular when the program creates a thunk (a lazy suspension), the
-> current cost-centre stack is stored in the thunk, and restored when the
-> thunk is evaluated. In this way, the cost-centre stack is _independent
-> of the actual evaluation order_ used by GHC at runtime.
-
-The cost center profile cannot show where a thunk is forced because the
-cost centre stack is independent of the evaluation order.
-
-## Cost centre profiling - Laziness
-
-``` {.haskell .small}
-module Main (main) where
-
-import Control.Monad (unless)
-
-data Lazy = Lazy Integer
-    deriving (Show)
-
-square :: Integer -> Integer
-square x = x * x
-
-double :: Integer -> Integer
-double x = x + x
-
-small :: Integer -> IO Lazy
-small x = do
-    unless (x > 2) $ putStrLn "x is small"
-    pure $ Lazy (square x)
-
-main :: IO ()
-main = do
-    r <- small (double 2)
-    print r
-```
-
-## Cost centre profiling - Laziness
-
-```
-                    individual      inherited
-COST CENTRE       %time %alloc   %time %alloc
-
-MAIN                0.0    1.3     0.0  100.0
- CAF                0.0    0.1     0.0    1.0
-  main              0.0    0.2     0.0    0.9
-   double           0.0    0.0     0.0    0.0
-   small            0.0    0.7     0.0    0.7
-    square          0.0    0.0     0.0    0.0
-```
-
-<!-- I omitted some columns to save space. -->
-
-- Where is `double` evaluated?
-- Where is `square` evaluated?
-
-We can answer these questions, but not by using the cost centre profile.
-The heirarchy in the profile is independent of the actual evaluation
-order.
-
-## Interpreting cost centre profiles - Recursion
-
-GHC User's Guide, Section 8.1: (Emphasis mine.)
-
-> What about recursive functions, and mutually recursive groups of
-> functions? Where are the costs attributed? Well, although GHC does keep
-> information about which groups of functions called each other
-> recursively, this information isn’t displayed in the basic time and
-> allocation profile, instead the call-graph is flattened into a tree as
-> follows: _a call to a function that occurs elsewhere on the current
-> stack does not push another entry on the stack, instead the costs for
-> this call are aggregated into the caller_.
-
-The cost centre profile will appear to mis-attribute costs in the case of
-recursive functions. Of course, the costs aren't _really_ mis-attributed;
-it's just not possible to distinguish the call sites.
-
-<!-- This isn't directly related to Strict and profiling with laziness, it's just something everybody should know. -->
 
 # Why Strict? Why NOT Strict?
 

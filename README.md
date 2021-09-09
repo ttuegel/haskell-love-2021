@@ -384,6 +384,16 @@ module M where
 
 All the usual caveats about `BangPatterns` and `StrictData` apply.
 
+Use `~` to turn it off:
+
+``` {.haskell .ignore}
+let ~x = y in _
+let ~(~(T x)) = y in _  -- irrefutable
+```
+
+`Strict` only applies to modules where it is enabled! It doesn't change
+the semantics of anything defined in lazy modules.
+
 # Profiling
 
 ## Why measure?
@@ -485,7 +495,7 @@ GHC User's Guide, Section 8.1.2: (Emphasis mine.)
 > by one. The stack also sometimes has to be saved and restored; in
 > particular when the program creates a thunk (a lazy suspension), the
 > current cost-centre stack is stored in the thunk, and restored when the
-> thunk is evaluated. In this way, the cost-centre stack is _independent
+> thunk is evaluated. In this way, _the cost-centre stack is independent
 > of the actual evaluation order_ used by GHC at runtime.
 
 The cost center profile cannot show where a thunk is forced because the
@@ -591,13 +601,7 @@ concerns.
 
 There are two ways that `Strict` helped us control performance:
 
-1. `Strict` tends to turn thunk (space) leaks into wasted time.
-
-    ```
-    default = lazy      =>          delay evaluation    =>   leak space
-
-    default = strict    =>    unnecessary evaluation    =>   waste time
-    ```
+1. `Strict` tends to make fewer thunks, trading time for space.
 
     Debugging programs that _waste time_ is easier than debugging programs
     that _leak space_.

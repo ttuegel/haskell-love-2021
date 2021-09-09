@@ -12,22 +12,22 @@ patat:
 
 You will learn:
 
-- How evaluation works
-- How to control evaluation
+- How evaluation happens, and how to control it
+    - Pattern matching
+    - `seq`
+    - Strict patterns
+    - Strict fields
 - How to measure performance
+    - Cost centre profiling
+    - Heap profiling
 - Why you should and should not use Strict Haskell
 
 # Evaluation
 
-## Pattern matching
+## Tracing evaluation
 
-Evaluation is driven by pattern matching.
-
-We can use `trace` or `undefined` to explore how this happens.
-
-<!-- If you liked Minesweeper, you'll love debugging with `undefined`! -->
-
-<!-- `trace` is polymorphic, so it doesn't matter so much where you put the parentheses, but it will affect when it fires. -->
+`trace` prints a message before its second argument is evaluated.
+Use it to explore when expressions are evaluated.
 
 ``` {.haskell .lazy}
 import Debug.Trace (trace)
@@ -38,13 +38,25 @@ inside = trace "inside"
 rhs = trace "rhs"
 irrelevant = trace "irrelevant"
 body = trace "body"
+```
 
+Example:
+
+``` {.haskell .lazy}
 data T = T Integer
   deriving Show
 
 newtype N = N Integer
   deriving Show
+
+example_bCYB =
+    outside (T (inside 4))
 ```
+
+## Pattern matching
+
+The essense of evaluation:
+At each pattern, the expression is evaluated until it does or does not match.
 
 ``` {.haskell .lazy}
 example_HVgx =
@@ -52,10 +64,19 @@ example_HVgx =
         T _ -> ()
 ```
 
+Step-by-step:
+
+``` {.haskell .ignore}
+outside (T (inside (1 + 1)))  -- matches (T _)? unknown
+-- eval: outside
+T (inside (1 + 1))  -- matches (T _): yes
+-- done
+```
+
 ## Pattern matching
 
-For each pattern, the expression is evaluated until it can be matched or
-refuted:
+The essense of evaluation:
+At each pattern, the expression is evaluated until it does or does not match.
 
 ``` {.haskell .lazy}
 example_MGPj =
@@ -64,12 +85,19 @@ example_MGPj =
         T _ -> ()
 ```
 
-The first pattern forces the complete evaluation even though it does not
-match: we have to evaluate the argument of `T` to decide if the pattern
-matches.
+Step-by-step:
 
-There is no magic! The runtime system evaluates terms as needed to match
-patterns, nothing more and nothing less.
+``` {.haskell .ignore}
+outside (T (inside (1 + 1)))  -- matches (T 3)? unknown
+-- eval: outside
+T (inside (1 + 1))  -- matches (T 3)? unknown
+-- eval: inside
+T (1 + 1)  -- matches (T 3)? unknown
+T 2  -- matches (T 3)? no
+-- done
+```
+
+Every other technique for controlling evaluation builds on this.
 
 ## Irrefutable patterns
 
@@ -98,8 +126,8 @@ example_GuXI =
 
 ## Sharing
 
-An expression will be evaluated at most once. The result of evaluating an
-expression is _shared_.
+An expression will be evaluated at most once, that is:
+the result of evaluation is _shared_.
 
 ``` {.haskell .lazy}
 shared :: T
@@ -115,43 +143,13 @@ example_QTdb =
         T _ -> ()
 ```
 
-## Weak head normal form
-
-A term is in _weak head normal form_ if it is evaluated to its outermost
-constructor or lambda. Otherwise, we call it a _thunk_.
-
-These terms are in weak head normal form:
-
-``` {.haskell .ignore}
-T (16 * 16)
-
-N 16
-
-\x -> x + 1  -- Lambdas are values too!
-
-7
-```
-
-These terms are not:
-
-``` {.haskell .ignore}
-N (4 * 4)  -- 'newtype' constructors are not real constructors!
-
-if (8 * 8) == 64 then A 1 else A 0
-
-(\x -> x + 1) . (\x -> 3 * x)
-
-3 + 4
-```
-
 ## `seq`
 
 If we know the constructors, we can evaluate any expression by pattern
 matching. What if the constructors are not in scope, or the type is not
 known?
 
-The compiler gives us a magic tool to evaluate expressions to weak head
-normal form even if we don't know the type's constructors!
+`seq` evaluates its first argument and returns the second:
 
 ``` {.haskell .lazy}
 strictly :: T
@@ -167,16 +165,72 @@ example_Xplw =
 `irrelevant` is evaluated because we have to pass through `seq` to get to
 the outermost constructor.
 
+## Weak head normal form
+
+`seq` evaluates its first argument to weak head normal form.
+
+A term is in _weak head normal form_ if it is evaluated to its outermost
+constructor or lambda.
+
+Examples:
+
+``` {.haskell .ignore}
+T (16 * 16)
+
+\x -> x + 1  -- Lambdas are values too!
+
+7
+```
+
+Counter-examples:
+
+``` {.haskell .ignore}
+N (4 * 4)  -- 'newtype' constructors are not real constructors!
+
+if (8 * 8) == 64 then A 1 else A 0
+
+(\x -> x + 1) . (\x -> 3 * x)
+
+3 + 4
+```
+
+## Thunks
+
+A term that is not in weak head normal form is called a _thunk_.
+
+A thunk may be bottom (`_|_`), but a term in weak head normal form is
+known not to be bottom.
+
+> The value of `seq a b` is bottom if `a` is bottom,
+> and otherwise equal to `b`.
+
+From here on, "evaluate" shall mean "evaluate to weak head normal form"
+unless otherwise specified.
+
 ## `BangPatterns`
 
-With the `BangPatterns` extension enabled, use `!` before any pattern to
-evaluate it to weak head normal form before matching:
+Status: extension since GHC 6.8.1
+
+Use `!` before a pattern to evaluate it before matching:
 
 ``` {.haskell .lazy}
 example_upsS =
     case T (inside (1 + 1)) of
         T !x -> const () x
 ```
+
+This is equivalent to inserting `seq`:
+
+``` {.haskell .lazy}
+example_GtKP =
+    case T (inside (1 + 1)) of
+        T x -> seq x (const () x)
+```
+
+`BangPatterns` is a little more convenient than inserting `seq` by hand,
+and it tends to be used more in practice.
+
+## `BangPatterns`
 
 We can use `!` anywhere in the pattern, but it may have no added effect:
 
@@ -186,21 +240,13 @@ example_CUoA =
         !(T x) -> const () x  -- legal, but not very useful
 ```
 
-This is equivalent to using `seq`:
-
-``` {.haskell .lazy}
-example_GtKP =
-    case T (inside (1 + 1)) of
-        T x -> seq x (const () x)
-```
-
-`BangPatterns` tends to be used more in practice than `seq` itself.
+The pattern `T x` already evaluates the expression to weak head normal form.
 
 ## `BangPatterns` in `let` and `where`
 
 The order of evaluation in `let` and `where` blocks is subtle.
 
-Top-level strict bindings are evaluated before the body of the block:
+`!`s at the top of patterns are evaluated before the body of the block:
 
 ``` {.haskell .lazy}
 example_ptVB =
@@ -208,8 +254,7 @@ example_ptVB =
     in body (T x)
 ```
 
-Nested strict bindings are evaluated when a variable bound in the same
-pattern is demanded:
+Nested `!`s are evaluated when a variable bound in the same pattern is used:
 
 ``` {.haskell .lazy}
 example_MESN =
@@ -232,24 +277,28 @@ Remember, `newtype` constructors are not real constructors! Evaluating a
 
 ## Strict fields
 
-Besides binding patterns strictly, we can make constructor fields strict
-with `!`. This is not an extension, but part of the Haskell 2010 Language
-Report:
+Status: Haskell 2010
+
+Make a field strict by prefixing its type with `!`:
 
 ``` {.haskell .lazy}
 data S = S !Integer
   deriving Show
 ```
 
+Strict fields are evaluated when the constructor is evaluated:
+
 ``` {.haskell .lazy}
-example_Zdji =
+example_Zdji =  -- strict
     case S (inside (16 * 16)) of
         S _ -> ()
 
-example_UlWi =
+example_UlWi =  -- lazy
     case T (inside (16 * 16)) of
         T _ -> ()
 ```
+
+## Strict fields
 
 There is no way to lazily bind a strict field, except to bind the entire
 constructor with an irrefutable pattern:
@@ -260,15 +309,17 @@ example_emjP =
         ~(S _) -> ()
 ```
 
+Think carefully when you add a strict field to a sum type!
+
 ## `StrictData`
 
-The `StrictData` extension makes all constructor fields strict by default,
-for data types defined in a module where it is enabled, as if they were
-prefixed with `!`.
+Status: extension since GHC 8.0.1
+
+Make all constructor fields strict by default.
+
+These are the same when `StrictData` is enabled:
 
 ``` {.haskell .ignore}
--- These are the same, with StrictData enabled.
-
 data S = S !Integer
 
 data S' = S' Integer
@@ -280,16 +331,14 @@ To make a field lazy, prefix its type with `~`:
 data T' = T ~Integer
 ```
 
-`StrictData` is a popular extension that is often regarded as at least
-harmless, but we should remain aware of the consequences of making fields
-strict!
+`StrictData` is a popular extension, but we should remain aware of the
+consequences of using strict fields.
 
 ## `Strict`
 
-The `Strict` extension makes pattern bindings strict by default, and also
-enables `StrictData`.
+Status: extension since GHC 8.0.1. Implies `StrictData`.
 
-`Strict` applies a `!`-pattern at the top level of patterns:
+Make patterns strict by default by applying `!` implicitly at the top:
 
 ``` {.haskell .ignore}
 -- function definitions
@@ -335,16 +384,45 @@ module M where
 
 All the usual caveats about `BangPatterns` and `StrictData` apply.
 
-# Performance
+# Profiling
 
-## Thunks and space leaks
+## Why measure?
 
-Thunks can be a problem if the thunk uses more space than the value it
-represents.
+Every thunk is a trade-off:
+
+- we spend less time evaluating, but
+- we use more memory to hold the thunk (often).
+
+We have to control how we make this trade-off because there isn't a
+single solution that works for all cases.
+
+We cannot control what we cannot measure.
 
 Every non-trivial Haskell program leaks thunks.
 
 ## Cost centre profiling
+
+Cost centre profiling reports
+
+- time spent
+- memory allocated
+
+by sections of code ("cost centres").
+
+Build with profiling:
+`ghc -prof -fprof-auto-top -rtsopts ...`
+
+`-prof`: enable profiling
+`-fprof-auto-top`: assign a cost centre to every top-level definition
+`-rtsopts`: enable setting RTS options at runtime (potentially insecure)
+
+Run with profiling:
+`./main ... +RTS -p`
+
+`+RTS`: send options to the RTS
+`-p`: enable cost centre profiling
+
+## Cost centre profiling - Example
 
 ``` {.haskell .small}
 module Main (main) where
@@ -371,11 +449,7 @@ main = do
     print r
 ```
 
-## Cost centre profiling
-
-TODO: Build and run with cost centre profiling
-
-## Cost centre profiling - Laziness
+## Cost centre profiling - Example
 
 ```
                     individual      inherited
@@ -396,7 +470,7 @@ MAIN                0.0    1.3     0.0  100.0
 
 We can answer these questions, but not by using the cost centre profile.
 
-## Interpreting cost centre profiles - Laziness
+## Cost centre profiling - Laziness
 
 GHC User's Guide, Section 8.1.2: (Emphasis mine.)
 
@@ -417,7 +491,7 @@ GHC User's Guide, Section 8.1.2: (Emphasis mine.)
 The cost center profile cannot show where a thunk is forced because the
 cost centre stack is independent of the evaluation order.
 
-## Interpreting cost centre profiles - Recursion
+## Cost centre profiling - Recursion
 
 GHC User's Guide, Section 8.1: (Emphasis mine.)
 
@@ -437,6 +511,17 @@ it's just not possible to distinguish the call sites.
 <!-- This isn't directly related to Strict and profiling with laziness, it's just something everybody should know. -->
 
 ## Heap profiling
+
+Heap profiling reports the contents of the heap, broken down by the cost
+centre that allocated them.
+
+Run with heap profiling:
+`./main ... +RTS -h -i0.01`
+
+`-h`: enable heap profiling
+`-i0.01`: set the heap sampling interval to 0.01 seconds
+
+## Heap profiling - Example
 
 ``` {.haskell .sawtooth}
 {-# LANGUAGE NumericUnderscores #-}
@@ -466,35 +551,35 @@ loop r n
         loop r (n + 1)
 ```
 
-## Heap profiling
-
-TODO: Build and run with heap profiling
-
-## Interpreting heap profiles
+## Heap profiling - Example
 
 ![](sawtooth.png)
 
-## Limitations of heap profiling
+## Heap profiling - Limitations
 
-- Walking the heap is expensive, so the heap profiling sample interval is
-  long by default (0.1 seconds). Short-lived leaks cannot be detected
-  reliably.
+-   Walking the heap is expensive, so the default sample interval is long.
+
+    Thought experiment:
+
+    The default sample interval is 0.1 s = 100 ms.
+    Nyquist-Shannon theorem: you can't reliably measure under 200 ms.
+    If your application's response time is less than 200 ms,
+    then you wouldn't know if you have space leaks or not.
 
 <!-- We can increase the sampling frequency, but gathering more data is slower to run and more difficult to analyze. We don't have a way to increase the frequency selectively. -->
 
-<!-- Do you work on a web app backend? Is your request-response cycle faster than 200 ms? By Nyquist-Shannon theorem, you can't reliably detect a thunk leak with the default settings. You can increase the frequency, but it has a cost. -->
+-   Heap profiling loses context.
 
-- Heap profiling loses context.
+    Cost centre profiling shows a nice tree of cost centres,
+    but heap profiling can't show the relation between them so easily.
 
-<!-- We cannot directly identify the root cause of allocation from the heap profile because only the top of the cost centre stack is shown. -->
-
-<!-- Heap spikes are often stripey. -->
+    It's hard to find the _root_ cause of leaks.
 
 # Why Strict? Why NOT Strict?
 
-## How `Strict` helps
+## Experience report
 
-We struggled for months debugging space leaks in a 120+ kLoC Haskell
+My team struggled for months debugging space leaks in a 120+ kLoC Haskell
 application, and even then felt that we had only scratched the surface.
 
 We made the switch to Strict Haskell. Within a week, we identified and
@@ -551,20 +636,17 @@ There are two ways that `Strict` helped us control performance:
 
 3.  Finally, add `Strict` to `default-extensions`.
 
-## Lazy calling convention
+## Lazy data types
 
-We find a type that is expensive to compute, but rarely used. We decide it
-should be bound lazily by default.
-
-It's too easy to forget to bind with `~` everywhere. What do we do?
+Problem: we find a type that is expensive to compute, but rarely demanded.
+It should be bound lazily by default, but it's hard to remember to use `~`
+everywhere. What do we do?
 
 Introduce a lazy wrapper. The most general case:
 
 ``` {.haskell .ignore}
 data Lazy a = Lazy ~a
 ```
-
-<!-- We could, and often should, use a more specific wrapper. -->
 
 ## Deriving
 
@@ -599,30 +681,29 @@ Workarounds:
 2.  Use `NoStrict` in the module where `Functor` is derived. Mark fields lazy.
 3.  Avoid `DeriveFunctor`.
 
-## Reasoning about substitution
+## Do we care about bottom?
 
-A common complaint about `Strict` is that it breaks substitution:
+A common complaint about `Strict` is that it breaks substitution with bottom:
 
 ``` {.haskell .ignore}
 -- With Strict, this:
 let x = f y in g x
 -- is only the same as this:
 g (f y)
--- if (f y) is defined (not _|_) or (g) is strict.
+-- if (f y) is not bottom or (g) is strict.
 ```
 
-In practice, this doesn't affect our ability to do equational reasoning
-because we were ignoring `_|_` anyway.
+Do we care? Empirically: no.
 
-Workarounds:
+1.  We usually do equational reasoning under an implicit assumption that
+    all values are defined; that is, we don't think about bottoms at all.
 
-1.  Ignore the problem. Already we mostly ignore `_|_` when we reason
-    about pure code.
-2.  Use lazy patterns when binding partial values.
+2.  If we cared how our code handled bottoms, we would write tests for that.
 
-## Why don't we care about `_|_`?
+## Why don't we care about bottom?
 
 >     "Fast and Loose Reasoning is Morally Correct" (doi:10.1.1.63.1337)
+>         Nils Anders, Danielsson John Hughes, Patrik Jansson
 >
 > Functional programmers often reason about programs as if they were
 > written in a total language, expecting the results to carry over to
@@ -630,17 +711,16 @@ Workarounds:
 > proved that if two closed terms have the same semantics in the total
 > language, then they have related semantics in the partial language.
 
-If we cared about the correctness of our programs with undefined inputs,
-we would write tests for that.
-
-We don't care about `_|_` because it mostly doesn't have an interpretation
-in our domain model.
+We mostly work in domains with models where bottom doesn't mean anything.
 
 <!-- For example, bank account details, social media profile, etc. -->
 
 ## Unlifted types
 
-Normal data types are _lifted_ meaning they contain `_|_`,
+With `Strict`, we are still being a little imprecise with bottoms,
+but in the future we may be able to be totally precise.
+
+Normal data types are _lifted_ meaning they allow bottom,
 as opposed to certain primitive types which are _unlifted_.
 
 Proposal to add user-defined _unlifted_ data types to GHC:
@@ -648,14 +728,12 @@ https://gitlab.haskell.org/ghc/ghc/-/wikis/unlifted-data-types
 
 This talk in a few years, probably:
 
-<!-- When the feature stabilizes and base libraries support it... -->
-
-> Use lifted data types when `_|_` has a reasonable interpretation in your
-> domain model. Use unlifted data types everywhere else.
+> If bottom has a meaning in your domain model, use lifted data.
+> For everything else, use unlifted data.
 
 ## Recommendations
 
--   Measure performance.
+-   Measure performance now.
 
     Everyone says they don't care about performance, until it's _too slow_.
 
